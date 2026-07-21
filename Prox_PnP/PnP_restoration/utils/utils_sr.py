@@ -208,7 +208,11 @@ def p2o(psf, shape):
     otf[..., :psf.shape[2], :psf.shape[3]].copy_(psf)
     for axis, axis_size in enumerate(psf.shape[2:]):
         otf = torch.roll(otf, -int(axis_size / 2), dims=axis + 2)
-    otf = torch.rfft(otf, 2, onesided=False)
+    
+    # we changed it! altough it originally creates  NxCxHxWx2 but we change it anyway (:
+    # nope, back to the original
+    # otf = torch.fft.rfft(otf, 2, onesided=False)
+    otf = torch.view_as_real(torch.fft.fft2(otf))
     n_ops = torch.sum(torch.tensor(psf.shape).type_as(psf) * torch.log2(torch.tensor(psf.shape).type_as(psf)))
     otf[..., 1][torch.abs(otf[..., 1]) < n_ops * 2.22e-16] = torch.tensor(0).type_as(psf)
     return otf
@@ -239,14 +243,32 @@ def downsample(x, sf=3):
 
 
 def prox_solution(x, FB, FBC, F2B, FBFy, alpha, sf):
-    FR = FBFy + torch.rfft(alpha * x, 2, onesided=False)
+    
+    # we changed it!!
+    # FR = FBFy + torch.rfft(alpha * x, 2, onesided=False)
+    print('############################')
+    print(FBFy.shape)
+    print((torch.view_as_real(torch.fft.fft2(alpha * x)).shape))
+    print('############################')
+    FR = FBFy + torch.view_as_real(torch.fft.fft2(alpha * x))
+    
     x1 = cmul(FB, FR)
     FBR = torch.mean(splits(x1, sf), dim=-1, keepdim=False)
     invW = torch.mean(splits(F2B, sf), dim=-1, keepdim=False)
     invWBR = cdiv(FBR, csum(invW, alpha))
     FCBinvWBR = cmul(FBC, invWBR.repeat(1, 1, sf, sf, 1))
-    FX = (FR - FCBinvWBR) / alpha.unsqueeze(-1)
-    Xest = torch.irfft(FX, 2, onesided=False)
+    
+    # we changed it!
+    # FX = (FR - FCBinvWBR) / alpha.unsqueeze(-1)
+    # alpha = 
+    FX = (FR - FCBinvWBR) / alpha
+    
+    # we changed it!
+    
+    # Xest = torch.irfft(FX, 2, onesided=False)
+    # Xest = torch.view_as_real(torch.fft.irfft(FX))
+    # we changed it twice
+    Xest = torch.fft.irfft(FX)
     return Xest
 
 def grad_solution(x, FB, FBC, FBFy, sf):
@@ -276,7 +298,9 @@ def pre_calculate_prox(x, k, sf):
     F2B = r2c(cabs2(FB))
     #print(np.max(np.linalg.eig(F2B[0,0,:,:,0].cpu().numpy())[0]))
     STy = upsample(x, sf=sf)
-    FBFy = cmul(FBC, torch.rfft(STy, 2, onesided=False))
+    # we changed it!!
+    # FBFy = cmul(FBC, torch.rfft(STy, 2, onesided=False))
+    FBFy = cmul(FBC, torch.view_as_real(torch.fft.fft2(STy)))
     return FB, FBC, F2B, FBFy
 
 def pre_calculate_grad(x, k, sf):
@@ -492,7 +516,9 @@ def pad_circular(input, padding):
                                      H + 2 * padding[1]], W + 2 * padding[2]))`
     """
     offset = 3
+    print(padding)
     for dimension in range(input.dim() - offset + 1):
+        print('dimension : ', dimension)
         input = dim_pad_circular(input, padding[dimension], dimension + offset)
     return input
 
@@ -511,6 +537,7 @@ def imfilter(x, k):
     x: image, NxcxHxW
     k: kernel, cx1xhxw
     '''
+    print('imfilter_called')
     x = pad_circular(x, padding=((k.shape[-2] - 1) // 2, (k.shape[-1] - 1) // 2))
     x = torch.nn.functional.conv2d(x, k, groups=x.shape[1])
     return x
