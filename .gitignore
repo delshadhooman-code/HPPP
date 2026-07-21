@@ -1,0 +1,10 @@
+%%writefile .gitignore
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.png
+*.mat
+*.m
+
