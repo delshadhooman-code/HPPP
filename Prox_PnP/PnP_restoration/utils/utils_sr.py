@@ -270,14 +270,20 @@ def prox_solution(x, FB, FBC, F2B, FBFy, alpha, sf):
     # we changed it twice
     Xest = torch.fft.irfft(FX)
     return Xest
-
+# we changed this function since there's no instance for it
 def grad_solution(x, FB, FBC, FBFy, sf):
-    FBFx = cmul(FB, torch.rfft(x, 2, onesided=False))
-    AFx = downsample(torch.irfft(FBFx, 2, onesided=False),sf=sf)
+    # we change it
+    # FBFx = cmul(FB, torch.rfft(x, 2, onesided=False))
+    FBFx = cmul(FB, torch.view_as_real(torch.fft.fft2(x)))
+    # AFx = downsample(torch.irfft(FBFx, 2, onesided=False),sf=sf)
+    AFx = downsample(torch.view_as_complex(torch.fft.irfft2(FBFx)),sf=sf)
+    # STAFx = upsample(AFx, sf=sf)
     STAFx = upsample(AFx, sf=sf)
-    ATAFx = cmul(FBC, torch.rfft(STAFx, 2, onesided=False))
+    # ATAFx = cmul(FBC, torch.rfft(STAFx, 2, onesided=False))
+    ATAFx = cmul(FBC, torch.view_as_real(torch.fft.fft2(STAFx)))
     FX = ATAFx - FBFy
-    Xest = torch.irfft(FX, 2, onesided=False)
+    # Xest = torch.irfft(FX, 2, onesided=False)
+    Xest = torch.view_as_complex(torch.fft.irfft2(FX))
     return Xest
 
 
@@ -516,9 +522,7 @@ def pad_circular(input, padding):
                                      H + 2 * padding[1]], W + 2 * padding[2]))`
     """
     offset = 3
-    print(padding)
     for dimension in range(input.dim() - offset + 1):
-        print('dimension : ', dimension)
         input = dim_pad_circular(input, padding[dimension], dimension + offset)
     return input
 
@@ -537,7 +541,6 @@ def imfilter(x, k):
     x: image, NxcxHxW
     k: kernel, cx1xhxw
     '''
-    print('imfilter_called')
     x = pad_circular(x, padding=((k.shape[-2] - 1) // 2, (k.shape[-1] - 1) // 2))
     x = torch.nn.functional.conv2d(x, k, groups=x.shape[1])
     return x
