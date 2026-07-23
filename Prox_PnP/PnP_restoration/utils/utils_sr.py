@@ -246,10 +246,6 @@ def prox_solution(x, FB, FBC, F2B, FBFy, alpha, sf):
     
     # we changed it!!
     # FR = FBFy + torch.rfft(alpha * x, 2, onesided=False)
-    print('############################')
-    print(FBFy.shape)
-    print((torch.view_as_real(torch.fft.fft2(alpha * x)).shape))
-    print('############################')
     FR = FBFy + torch.view_as_real(torch.fft.fft2(alpha * x))
     
     x1 = cmul(FB, FR)
@@ -265,10 +261,9 @@ def prox_solution(x, FB, FBC, F2B, FBFy, alpha, sf):
     
     # we changed it!
     
-    # Xest = torch.irfft(FX, 2, onesided=False)
-    # Xest = torch.view_as_real(torch.fft.irfft(FX))
     # we changed it twice
-    Xest = torch.fft.irfft(FX)
+    # Xest = torch.irfft(FX, 2, onesided=False)
+    Xest = torch.view_as_complex(torch.fft.irfft2(FX))
     return Xest
 # we changed this function since there's no instance for it
 def grad_solution(x, FB, FBC, FBFy, sf):
