@@ -267,18 +267,22 @@ def prox_solution(x, FB, FBC, F2B, FBFy, alpha, sf):
     return Xest
 # we changed this function since there's no instance for it
 def grad_solution(x, FB, FBC, FBFy, sf):
-    # we change it
+    # we change it. we also change other tensors to 4d (complex)
     # FBFx = cmul(FB, torch.rfft(x, 2, onesided=False))
-    FBFx = cmul(FB, torch.view_as_real(torch.fft.fft2(x)))
+    FB = torch.view_as_complex(FB)
+    FBFx = torch.mul(FB, torch.fft.fft2(x))
     # AFx = downsample(torch.irfft(FBFx, 2, onesided=False),sf=sf)
-    AFx = downsample(torch.view_as_complex(torch.fft.irfft2(FBFx)),sf=sf)
-    # STAFx = upsample(AFx, sf=sf)
+    AFx = downsample(torch.fft.irfft2(FBFx),sf=sf)
     STAFx = upsample(AFx, sf=sf)
     # ATAFx = cmul(FBC, torch.rfft(STAFx, 2, onesided=False))
-    ATAFx = cmul(FBC, torch.view_as_real(torch.fft.fft2(STAFx)))
+    print(torch.view_as_complex(FBC).shape)
+    print(torch.fft.fft2(STAFx).shape)
+    ATAFx = torch.mul(torch.view_as_complex(FBC), torch.fft.fft2(STAFx))
+    # we changed the FBy
+    FBy = torch.view_as_complex(FBy)
     FX = ATAFx - FBFy
     # Xest = torch.irfft(FX, 2, onesided=False)
-    Xest = torch.view_as_complex(torch.fft.irfft2(FX))
+    Xest = torch.fft.irfft2(FX)
     return Xest
 
 
