@@ -12,6 +12,7 @@ chmod 600 ../.ssh/id_ed25519
 chmod 644 ../.ssh/id_ed25519.pub
 
 eval "$(ssh-agent -s)" # these two lines must be run in the terminal directly & I don't know why!
+# the line above is what matters and must be runned directly in the terminal (Garfield-Gray)
 ssh-add ../.ssh/id_ed25519
 
 ssh -T git@github.com
