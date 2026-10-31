@@ -15,5 +15,7 @@ eval "$(ssh-agent -s)" # these two lines must be run in the terminal directly & 
 # the line above is what matters and must be runned directly in the terminal (Garfield-Gray)
 ssh-add ../.ssh/id_ed25519
 
+# not anymore! if you put a . in front of the code or "source" you're good to go
+
 ssh -T git@github.com
 
